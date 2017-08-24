@@ -1,0 +1,6 @@
+test
+FILE FOR LOADING
+Each method of the AsynchronousFileChannel class that supports asynchronous file I/O operation has two versions.
+One version returns a Future object, which we can use to handle the result of the requested asynchronous operation.
+The get() method of the Future object returns the number of bytes written to the file channel.
+The following code uses the version of the write() method that returns a Future object:
