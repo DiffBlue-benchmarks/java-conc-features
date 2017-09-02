@@ -1,0 +1,15 @@
+1. Copy the class file to <Tomcat-installationdirectory>/webapps/ROOT/WEB-INF/classes/>
+2. Create following entries in <Tomcat-installationdirectory>/webapps/ROOT/WEB-INF/>
+
+<servlet>
+   <servlet-name>Main</servlet-name>
+   <servlet-class>Main</servlet-class>
+</servlet>
+
+<servlet-mapping>
+   <servlet-name>Main</servlet-name>
+   <url-pattern>/Main</url-pattern>
+</servlet-mapping>
+
+3.  Start tomcat service
+4.  Navigate to http://localhost:8080/Main
