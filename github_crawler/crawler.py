@@ -8,7 +8,7 @@ import json
 import numpy as np
 
 class repo_discriptor:
-    def __init__ (self, url, size, star_count, watched_count, fork_count,  \
+    def __init__ (self, name, size, star_count, watched_count, fork_count,  \
                  significance,  \
                  normalized_size, normalized_star_count, normalized_watched_count, normalized_fork_count):
         self.size=size
@@ -22,14 +22,13 @@ class repo_discriptor:
         self.normalized_fork_count=normalized_fork_count
 
         self.significance=significance
-        self.url=url
-        #self.name=url
-        #self.user="?"
+        self.url="https://github.com"+name
+        self.name=name
 
     def __str_dump (self) :
         s = "Repo: %s\n  name '%s'\n  significance %.3f\n  stars %.3f/%d\n  size %.3f/%d\n  watchers %.3f/%d\n  forks %.3f/%d\n" % \
                 (self.url,
-                "?",
+                self.name,
                 self.significance,
                 self.normalized_star_count,    self.star_count,
                 self.normalized_size,          self.size,
@@ -57,7 +56,7 @@ repo_search_graphql="""
     edges {{
       node {{
         ... on Repository {{
-          name
+          resourcePath
           createdAt
           updatedAt
           diskUsage
@@ -126,7 +125,7 @@ def extract_repo(response):
         total_watched=repo['watchers']['totalCount']
         total_forked=repo['forks']['totalCount']
         total_size=repo['diskUsage']
-        name=repo['name']
+        name=repo['resourcePath']
         repo_names.append(name)
         np_numeric_data[number_extacted, :] = [total_stars, total_forked, total_size, total_watched]
         number_extacted+=1
@@ -192,37 +191,6 @@ def get_repo_discriptors():
 
 def repo_code_has_keyword (repo_name, keyword) :
     q = 'extension:java in:file thread repo:{0}' % repo_name
-    post_data = '''
-    {{
-      search(query: "{0}", type: REPOSITORY, first: {1}{2})  {{
-        pageInfo {{
-          hasNextPage
-          startCursor
-          endCursor
-        }}
-        repositoryCount
-        edges {{
-          node {{
-            ... on Repository {{
-              name
-              createdAt
-              updatedAt
-              diskUsage
-              stargazers {{
-               totalCount
-              }}
-              forks {{
-               totalCount
-              }}
-              watchers {{
-               totalCount
-              }}
-            }}
-          }}
-        }}
-      }}
-    }}
-    '''
     return False
 
 def has_concurrency (repo) :
