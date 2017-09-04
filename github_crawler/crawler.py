@@ -1,9 +1,25 @@
 # TODO: problem  API is limited to 1000 repos per search query (https://developer.github.com/v3/search/#about-the-search-api)
 
-import pdb
 import requests
 import json
 import numpy as np
+
+class repo_discriptor:
+    def __init__(self, url, size, star_count, watched_count, fork_count,  \
+                 significance,  \
+                 normalized_size, normalized_star_count, normalized_watched_count, normalized_fork_count):
+        self.size=size
+        self.star_count=star_count
+        self.watched_count=watched_count
+        self.fork_count=fork_count
+
+        self.normalized_size=normalized_size
+        self.normalized_star_count=normalized_star_count
+        self.normalized_watched_count=normalized_watched_count
+        self.normalized_fork_count=normalized_fork_count
+
+        self.significance=significance
+        self.url=url
 
 fetching_rate=100
 url='https://api.github.com/graphql'
@@ -102,37 +118,55 @@ def print_error(response):
     print "---->ERROR:"
     print response
     print "---->Exception:"
+def print_repo_discriptor_list(repo_discriptor_list):
+    for discriptor in repo_discriptor_list:
+        print "{0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}".format(discriptor.url, discriptor.significance,  \
+                discriptor.size, discriptor.star_count, discriptor.watched_count, discriptor.fork_count, \
+                discriptor.normalized_size, discriptor.normalized_star_count, discriptor.normalized_watched_count, discriptor.normalized_fork_count)
 
-# main loop
-current_page_id=""
-repo_dict = []
-np_repo_data=np.zeros(shape=(0, 4))
-while True:
-    request_str=build_repo_search_request(repo_search_query, fetching_rate, current_page_id)
-    response=do_request(request_str)
-    current_page_id=get_next_page_id(response)
-    number_extracted, temp_repo_names, temp_repo_data=extract_repo(response)
-    np_repo_data=np.concatenate((np_repo_data, temp_repo_data), axis=0)
-    repo_dict=repo_dict+temp_repo_names
-    print "fetched {0}. Progress: {1} out of {2}." \
-        .format(number_extracted, len(repo_dict), get_total_repos(response))
-    if not next_page(response):
-        break
+# main function, gets list of 'repo_disciptors'
+# based on the defined parameters.
+# list is ordered by decreasing significance.
+def get_repo_discriptors():
+    current_page_id=""
+    repo_dict = []
+    np_repo_data=np.zeros(shape=(0, 4))
+    while True:
+        request_str=build_repo_search_request(repo_search_query, fetching_rate, current_page_id)
+        response=do_request(request_str)
+        current_page_id=get_next_page_id(response)
+        number_extracted, temp_repo_names, temp_repo_data=extract_repo(response)
+        np_repo_data=np.concatenate((np_repo_data, temp_repo_data), axis=0)
+        repo_dict=repo_dict+temp_repo_names
+        print "fetched {0}. Progress: {1} out of {2}." \
+            .format(number_extracted, len(repo_dict), get_total_repos(response))
+        if not next_page(response):
+            break
+    print "-------"
 
-print "-------"
+    #normalize and calculate significance.
+    normalized_repo_data=np_repo_data/np_repo_data.max(axis=0)
+    significance=np.apply_along_axis(calculate_significance, 1, normalized_repo_data)
+    #create objects (there may be a more platonic ways of doing this but anyways...)
+    index=0
+    repo_object_list=[]
+    for repo in  repo_dict:
+        discriptor=repo_discriptor(repo,
+                np_repo_data[index, 2], np_repo_data[index,0], \
+                np_repo_data[index, 3], np_repo_data[index, 1],
+                significance[index],
+                normalized_repo_data[index, 2], normalized_repo_data[index,0], \
+                normalized_repo_data[index, 3], normalized_repo_data[index, 1])
+        repo_object_list.append(discriptor)
+        index+=1
+    #order by decreasing significance
+    repo_object_list.sort(key=lambda x : x.significance, reverse=True)
+    return repo_object_list
 
-#normalize and calculate significance.
-normalized_repo_data=np_repo_data/np_repo_data.max(axis=0)
-significance=np.apply_along_axis(calculate_significance, 1, normalized_repo_data)
+# demo
+alist=get_repo_discriptors()
+print_repo_discriptor_list(alist)
 
-#create dictionary (there is more platonic ways of doing this but anyways...)
-repo_dict2={}
-index=0
-for repo in  repo_dict:
-    repo_dict2[repo]=significance[index]
-    index+=1
-
-#order by decreasing significance and print
-repo_dict_sorted=sorted(repo_dict2.items(), key=lambda x : x[1], reverse=True)
-for repo in repo_dict_sorted:
-    print repo[0]
+    # repo_dict_sorted=
+    # for repo in repo_dict_sorted:
+    #     print repo[0]
