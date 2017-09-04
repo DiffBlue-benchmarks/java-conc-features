@@ -1,5 +1,8 @@
+#!/usr/bin/env python2
+
 # TODO: problem  API is limited to 1000 repos per search query (https://developer.github.com/v3/search/#about-the-search-api)
 
+import sys
 import requests
 import json
 import numpy as np
@@ -23,9 +26,9 @@ class repo_discriptor:
 
 fetching_rate=100
 url='https://api.github.com/graphql'
-token=""
+token="" # get one here: https://github.com/settings/tokens
 headers={'Authorization': 'token '+token}
-repo_search_query="language:Java stars:>1350"
+repo_search_query="language:Java stars:>4500"
 repo_search_graphql="""
 {{
   search(query: \"{0}\", type: REPOSITORY, first: {1}{2})  {{
@@ -90,11 +93,13 @@ def build_repo_search_request(query, first, after):
     if after!="":
         modified_after= ", after: \""+ after + "\""
     return repo_search_graphql.format(query, first, modified_after)
+
 def do_request(query):
     r2=requests.post(url, json.dumps({"query": query}), headers=headers)
     r=r2.json()
     ajson=json.loads(json.dumps(r))
     return ajson;
+
 def extract_repo(response):
     number_extacted=0
     np_numeric_data=np.zeros(shape=(len(get_edges(response)),4))
@@ -114,10 +119,12 @@ def extract_repo(response):
 # utility methods.
 def calculate_significance(a):
     return a[0]+(.75*(1-a[2]))+(.5*(a[3]+a[1]))
+
 def print_error(response):
     print "---->ERROR:"
     print response
     print "---->Exception:"
+
 def print_repo_discriptor_list(repo_discriptor_list):
     for discriptor in repo_discriptor_list:
         print "{0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}".format(discriptor.url, discriptor.significance,  \
@@ -163,10 +170,57 @@ def get_repo_discriptors():
     repo_object_list.sort(key=lambda x : x.significance, reverse=True)
     return repo_object_list
 
-# demo
-alist=get_repo_discriptors()
-print_repo_discriptor_list(alist)
+def repo_code_has_keyword (repo_name, keyword) :
+    q = 'extension:java in:file thread repo:{0}' % repo_name
+    post_data = '''
+    {{
+      search(query: "{0}", type: REPOSITORY, first: {1}{2})  {{
+        pageInfo {{
+          hasNextPage
+          startCursor
+          endCursor
+        }}
+        repositoryCount
+        edges {{
+          node {{
+            ... on Repository {{
+              name
+              createdAt
+              updatedAt
+              diskUsage
+              stargazers {{
+               totalCount
+              }}
+              forks {{
+               totalCount
+              }}
+              watchers {{
+               totalCount
+              }}
+            }}
+          }}
+        }}
+      }}
+    }}
+    '''
+    return False
+
+def has_concurrency (repo) :
+    pass
+
+def main () :
+    if token == "" :
+        print 'Empty token, please provide one'
+        return 1
+
+    # demo
+    alist=get_repo_discriptors()
+    print_repo_discriptor_list(alist)
 
     # repo_dict_sorted=
     # for repo in repo_dict_sorted:
     #     print repo[0]
+
+if __name__ == '__main__' :
+    ret = main ()
+    sys.exit (ret)
