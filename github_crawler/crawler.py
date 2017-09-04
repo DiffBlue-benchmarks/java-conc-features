@@ -8,7 +8,7 @@ import json
 import numpy as np
 
 class repo_discriptor:
-    def __init__(self, url, size, star_count, watched_count, fork_count,  \
+    def __init__ (self, url, size, star_count, watched_count, fork_count,  \
                  significance,  \
                  normalized_size, normalized_star_count, normalized_watched_count, normalized_fork_count):
         self.size=size
@@ -23,6 +23,22 @@ class repo_discriptor:
 
         self.significance=significance
         self.url=url
+        #self.name=url
+        #self.user="?"
+
+    def __str_dump (self) :
+        s = "Repo: %s\n  name '%s'\n  significance %.3f\n  stars %.3f/%d\n  size %.3f/%d\n  watchers %.3f/%d\n  forks %.3f/%d\n" % \
+                (self.url,
+                "?",
+                self.significance,
+                self.normalized_star_count,    self.star_count,
+                self.normalized_size,          self.size,
+                self.normalized_watched_count, self.watched_count,
+                self.normalized_fork_count,    self.fork_count)
+        return s
+
+    def __str__ (self) :
+        return self.__str_dump ()
 
 fetching_rate=100
 url='https://api.github.com/graphql'
@@ -118,7 +134,11 @@ def extract_repo(response):
 
 # utility methods.
 def calculate_significance(a):
-    return a[0]+(.75*(1-a[2]))+(.5*(a[3]+a[1]))
+    # a[0] stars
+    # a[1] forks
+    # a[2] size
+    # a[3] watch
+    return a[0]+(.25*(1-a[2]))+(.5*(a[3]+a[1]))
 
 def print_error(response):
     print "---->ERROR:"
@@ -217,9 +237,9 @@ def main () :
     alist=get_repo_discriptors()
     print_repo_discriptor_list(alist)
 
-    # repo_dict_sorted=
-    # for repo in repo_dict_sorted:
-    #     print repo[0]
+    for r in alist :
+        print r
+
 
 if __name__ == '__main__' :
     ret = main ()
