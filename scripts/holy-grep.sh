@@ -97,9 +97,9 @@ main ()
   find_regex 'import * java.awt'
 
   echo
-  echo "Package java.swing"
+  echo "Package javax.swing"
   echo "============="
-  find_regex 'import * java.swing'
+  find_regex 'import * javax.swing'
 
   echo
   echo "Package javax.servlet"
